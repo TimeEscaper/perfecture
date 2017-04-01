@@ -38,23 +38,10 @@ public class MapsActivity extends Activity implements OnMapReadyCallback {
         mapTypeGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
-                switch (checkedId) {
-                    case R.id.radio_map:
-                        mapType = GoogleMap.MAP_TYPE_NORMAL;
-                        break;
-                    case R.id.radio_hybrid:
-                        mapType = GoogleMap.MAP_TYPE_HYBRID;
-                        break;
-                    case R.id.radio_terrain:
-                        mapType = GoogleMap.MAP_TYPE_TERRAIN;
-                        break;
-                    default:
-                        mapType = GoogleMap.MAP_TYPE_NORMAL;
-                        break;
-                }
-                mMap.setMapType(mapType);
+                onMapTypeChanged(group, checkedId);
             }
         });
+
     }
 
 
@@ -85,5 +72,23 @@ public class MapsActivity extends Activity implements OnMapReadyCallback {
             return;
         }
         mMap.setMyLocationEnabled(true);
+    }
+
+    private void onMapTypeChanged(RadioGroup group, int checkedId) {
+        switch (checkedId) {
+            case R.id.radio_map:
+                mapType = GoogleMap.MAP_TYPE_NORMAL;
+                break;
+            case R.id.radio_hybrid:
+                mapType = GoogleMap.MAP_TYPE_HYBRID;
+                break;
+            case R.id.radio_terrain:
+                mapType = GoogleMap.MAP_TYPE_TERRAIN;
+                break;
+            default:
+                mapType = GoogleMap.MAP_TYPE_NORMAL;
+                break;
+        }
+        mMap.setMapType(mapType);
     }
 }
