@@ -6,6 +6,9 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
+import ru.mail.tp.perfecture.map.MapActivity;
+import ru.mail.tp.perfecture.map.MapsActivity;
+
 public class MainActivity extends AppCompatActivity {
 
     private Button btnOpenMap;
@@ -26,6 +29,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void openMap() {
-        startActivity(new Intent(MainActivity.this, MapsActivity.class));
+        startActivity(new Intent(MainActivity.this, MapActivity.class));
     }
 }
