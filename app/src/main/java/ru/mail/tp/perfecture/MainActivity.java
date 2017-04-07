@@ -7,7 +7,6 @@ import android.view.View;
 import android.widget.Button;
 
 import ru.mail.tp.perfecture.map.MapActivity;
-import ru.mail.tp.perfecture.map.MapsActivity;
 
 public class MainActivity extends AppCompatActivity {
 
