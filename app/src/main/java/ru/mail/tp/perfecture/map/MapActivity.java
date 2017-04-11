@@ -5,15 +5,11 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
-import android.util.Log;
 import android.widget.RadioGroup;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -27,24 +23,20 @@ import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.firebase.database.Logger;
 
-import ru.mail.tp.perfecture.MainActivity;
 import ru.mail.tp.perfecture.R;
 
+@SuppressWarnings("FieldCanBeLocal")
 public class MapActivity extends Activity
         implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private GoogleMap mMap;
     private GoogleApiClient googleApiClient;
+    @SuppressWarnings("unused")
     private Location location;
     private LocationRequest locationRequest = new LocationRequest();
 
@@ -130,6 +122,7 @@ public class MapActivity extends Activity
                         builder.build());
 
         result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+            @SuppressWarnings("unused")
             @Override
             public void onResult(@NonNull LocationSettingsResult locationSettingsResult) {
                 final Status status = locationSettingsResult.getStatus();
@@ -173,6 +166,7 @@ public class MapActivity extends Activity
                 googleApiClient, locationRequest, this);
     }
 
+    @SuppressWarnings("UnusedParameters")
     private void onMapTypeChanged(RadioGroup group, int checkedId) {
         switch (checkedId) {
             case R.id.radio_map:
