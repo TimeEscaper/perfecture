@@ -161,7 +161,6 @@ public class MapActivity extends Activity
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.d("MapAcitvity", "New location: " + String.valueOf(location.getLatitude()));
         this.location = location;
     }
 
