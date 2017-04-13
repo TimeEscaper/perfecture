@@ -1,33 +1,20 @@
-package ru.mail.tp.perfecture.storage;
+package ru.mail.tp.perfecture.api;
 
-import com.raizlabs.android.dbflow.annotation.Column;
-import com.raizlabs.android.dbflow.annotation.PrimaryKey;
-import com.raizlabs.android.dbflow.annotation.Table;
-import com.raizlabs.android.dbflow.annotation.Unique;
-import com.raizlabs.android.dbflow.structure.BaseModel;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by sibirsky on 14.04.17.
  */
 
-@Table(database = Configuration.activeDb)
-public class PlaceModel extends BaseModel {
-
-    @PrimaryKey
-    @Unique
+public class Place {
     private long id;
-
-    @Column
     private String title;
-
-    @Column
     private String location;
-
-    @Column
     private String description;
+    private List<String> photos = new ArrayList<>();
 
-    public PlaceModel(long id, String title, String location, String description) {
-        super();
+    public Place(long id, String title, String location, String description) {
         this.id = id;
         this.title = title;
         this.location = location;
@@ -64,5 +51,9 @@ public class PlaceModel extends BaseModel {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public List<String> getPhotos() {
+        return photos;
     }
 }
