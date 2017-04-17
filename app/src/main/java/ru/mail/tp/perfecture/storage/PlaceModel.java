@@ -21,17 +21,22 @@ public class PlaceModel extends BaseModel {
     private String title;
 
     @Column
-    private String location;
-
-    @Column
     private String description;
 
-    public PlaceModel(long id, String title, String location, String description) {
+    @Column
+    private double latitude;
+
+    @Column
+    private double longitude;
+
+    public PlaceModel(long id, String title, String description, double latitude,
+                      double longitude) {
         super();
         this.id = id;
         this.title = title;
-        this.location = location;
         this.description = description;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     public long getId() {
@@ -50,14 +55,6 @@ public class PlaceModel extends BaseModel {
         this.title = title;
     }
 
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
     public String getDescription() {
         return description;
     }
@@ -65,4 +62,14 @@ public class PlaceModel extends BaseModel {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) { this.latitude = latitude; }
+
+    public double getLongitude() { return longitude; }
+
+    public double setLongitude() { return longitude; }
 }

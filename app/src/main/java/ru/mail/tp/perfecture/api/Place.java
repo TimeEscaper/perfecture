@@ -10,14 +10,16 @@ import java.util.List;
 public class Place {
     private long id;
     private String title;
-    private String location;
-    private String description;
+    private String description = "";
+    private double latitude;
+    private double longitude;
     private List<String> photos = new ArrayList<>();
 
-    public Place(long id, String title, String location, String description) {
+    public Place(long id, String title, String description, double latitude, double longitude) {
         this.id = id;
         this.title = title;
-        this.location = location;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.description = description;
     }
 
@@ -37,14 +39,6 @@ public class Place {
         this.title = title;
     }
 
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
     public String getDescription() {
         return description;
     }
@@ -53,7 +47,17 @@ public class Place {
         this.description = description;
     }
 
+    public double getLatitude() { return latitude; }
+
+    public void setLatitude(double latitude) { this.latitude = latitude; }
+
+    public double getLongitude() { return longitude; }
+
+    public void setLongitude(double longitude) { this.longitude = longitude; }
+
     public List<String> getPhotos() {
         return photos;
     }
+
+    public void setPhotos(List<String> photos) { this.photos = photos; }
 }

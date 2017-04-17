@@ -37,8 +37,9 @@ class DbManager {
                 PlaceModel newPlace = new PlaceModel(
                         place.getId(),
                         place.getTitle(),
-                        place.getLocation(),
-                        place.getDescription());
+                        place.getDescription(),
+                        place.getLatitude(),
+                        place.getLongitude());
                 newPlace.save(databaseWrapper);
 
                 for (String photo : place.getPhotos()) {
