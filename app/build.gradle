@@ -40,4 +40,13 @@ dependencies {
 
     // sql-cipher database encryption (optional)
     compile "com.github.Raizlabs.DBFlow:dbflow-sqlcipher:${dbflow_version}"
+
+    compile 'com.squareup.retrofit2:retrofit:2.1.0'
+    compile 'com.squareup.retrofit2:converter-gson:2.1.0'
+
+    // Guava
+    compile 'com.google.guava:guava:20.0'
+
+    // GSON
+    compile 'com.google.code.gson:gson:2.8.0'
 }
