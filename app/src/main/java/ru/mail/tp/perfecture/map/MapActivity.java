@@ -3,6 +3,7 @@ package ru.mail.tp.perfecture.map;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.widget.RadioGroup;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -29,6 +31,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.List;
@@ -37,11 +40,13 @@ import ru.mail.tp.perfecture.R;
 import ru.mail.tp.perfecture.api.ApiService;
 import ru.mail.tp.perfecture.api.Place;
 import ru.mail.tp.perfecture.api.PlaceList;
+import ru.mail.tp.perfecture.places.PlaceInfoActivity;
 
 @SuppressWarnings("FieldCanBeLocal")
 public class MapActivity extends Activity
         implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener, LocationListener {
+        GoogleApiClient.OnConnectionFailedListener, LocationListener,
+        GoogleMap.OnMarkerClickListener {
 
     private GoogleMap mMap;
     private GoogleApiClient googleApiClient;
@@ -139,6 +144,7 @@ public class MapActivity extends Activity
             }
         });
 
+        mMap.setOnMarkerClickListener(this);
         mMap.setMyLocationEnabled(true);
     }
 
@@ -203,6 +209,17 @@ public class MapActivity extends Activity
         }
     }
 
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        if (marker.getTag() != null) {
+            long markedPlace = (Long) marker.getTag();
+            Intent intent = new Intent(MapActivity.this, PlaceInfoActivity.class);
+            intent.putExtra(PlaceInfoActivity.EXTRA_PLACE_TAG, String.valueOf(markedPlace));
+            startActivity(intent);
+        }
+        return false;
+    }
+
     private void startLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             alertMessage("Perfecture", "No permissions to access geolocations!");
@@ -243,15 +260,8 @@ public class MapActivity extends Activity
             LatLng placeCoord = new LatLng(place.getLatitude(), place.getLongitude());
             mMap.addMarker(new MarkerOptions()
                 .title(place.getTitle())
-                .position(placeCoord));
+                .position(placeCoord)).setTag(place.getId());
         }
-    }
-
-    private void showPlace(Place place) {
-        LatLng placeCoord = new LatLng(place.getLatitude(), place.getLongitude());
-        mMap.addMarker(new MarkerOptions()
-                .title(place.getTitle())
-                .position(placeCoord));
     }
 
 }
