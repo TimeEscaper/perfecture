@@ -1,5 +1,9 @@
 package ru.mail.tp.perfecture.api;
 
+import android.util.Log;
+
+import com.google.android.gms.location.LocationListener;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -24,13 +28,14 @@ public class ApiService {
         call.enqueue(new Callback<Place>() {
             @Override
             public void onResponse(Call<Place> call, Response<Place> response) {
+                Log.d("API", call.request().toString());
                 callback.onSuccess(response.body());
             }
 
             @Override
             public void onFailure(Call<Place> call, Throwable t) {
                 //TODO: check in storage
-                callback.onError();
+                callback.onError(t);
             }
         });
     }
@@ -48,13 +53,13 @@ public class ApiService {
             @Override
             public void onFailure(Call<PlaceList> call, Throwable t) {
                 //TODO: check in storage
-                callback.onError();
+                callback.onError(t);
             }
         });
     }
 
     public interface ApiCallback<T> {
         void onSuccess(T result);
-        void onError();
+        void onError(Throwable t);
     }
 }

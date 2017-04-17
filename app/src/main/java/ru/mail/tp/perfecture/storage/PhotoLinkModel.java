@@ -2,6 +2,7 @@ package ru.mail.tp.perfecture.storage;
 
 import com.raizlabs.android.dbflow.annotation.Column;
 import com.raizlabs.android.dbflow.annotation.ForeignKey;
+import com.raizlabs.android.dbflow.annotation.PrimaryKey;
 import com.raizlabs.android.dbflow.annotation.Table;
 import com.raizlabs.android.dbflow.structure.BaseModel;
 
@@ -9,15 +10,17 @@ import com.raizlabs.android.dbflow.structure.BaseModel;
  * Created by sibirsky on 14.04.17.
  */
 
-@Table(database = Configuration.activeDb)
+@Table(database = AppDatabase.class)
 public class PhotoLinkModel extends BaseModel {
 
-    @Column
+    @PrimaryKey
     String url;
 
     @Column
     @ForeignKey(tableClass = PlaceModel.class)
     long placeId;
+
+    public PhotoLinkModel() { super(); };
 
     public PhotoLinkModel(String url, long placeId) {
         super();

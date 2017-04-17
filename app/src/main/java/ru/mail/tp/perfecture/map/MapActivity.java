@@ -6,9 +6,11 @@ import android.app.AlertDialog;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.util.Log;
 import android.widget.RadioGroup;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -26,8 +28,15 @@ import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+
+import java.util.List;
 
 import ru.mail.tp.perfecture.R;
+import ru.mail.tp.perfecture.api.ApiService;
+import ru.mail.tp.perfecture.api.Place;
+import ru.mail.tp.perfecture.api.PlaceList;
 
 @SuppressWarnings("FieldCanBeLocal")
 public class MapActivity extends Activity
@@ -43,6 +52,17 @@ public class MapActivity extends Activity
     private int mapType = GoogleMap.MAP_TYPE_NORMAL;
 
     private RadioGroup mapTypeGroup;
+
+    private boolean isPending;
+
+    static {
+        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                .detectActivityLeaks()
+                .penaltyLog()
+                .penaltyDeath()
+                .build()
+        );
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,7 +115,26 @@ public class MapActivity extends Activity
         mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
             @Override
             public boolean onMyLocationButtonClick() {
-                //TODO: get nearest objects
+                if (isPending) {
+                    return false;
+                }
+                if (location != null) {
+                    isPending = true;
+                    ApiService.getInstance().getNearestPlaces(location.getLatitude(),
+                            location.getLongitude(),
+                            new ApiService.ApiCallback<PlaceList>() {
+                                @Override
+                                public void onSuccess(PlaceList result) {
+                                    isPending = false;
+                                    showPlaces(result.getPlaces());
+                                }
+
+                                @Override
+                                public void onError(Throwable t) {
+                                    Log.d("MapActivity", "Error!");
+                                }
+                            });
+                }
                 return false;
             }
         });
@@ -110,7 +149,10 @@ public class MapActivity extends Activity
             finish();
         }
         location = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
-
+        if (location != null) {
+            Log.d("MapActivity", "Location: " + String.valueOf(location.getLatitude()) + ";" +
+                    String.valueOf(location.getLongitude()));
+        }
         locationRequest.setInterval(10000);
         locationRequest.setFastestInterval(5000);
         locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
@@ -155,6 +197,10 @@ public class MapActivity extends Activity
     @Override
     public void onLocationChanged(Location location) {
         this.location = location;
+        if (location != null) {
+            Log.d("MapActivity", "Location: " + String.valueOf(location.getLatitude()) + ";" +
+                    String.valueOf(location.getLongitude()));
+        }
     }
 
     private void startLocationUpdates() {
@@ -190,6 +236,22 @@ public class MapActivity extends Activity
         builder.setMessage(text).setTitle(title);
         AlertDialog dialog = builder.create();
         dialog.show();
+    }
+
+    private void showPlaces(List<Place> places) {
+        for (Place place : places) {
+            LatLng placeCoord = new LatLng(place.getLatitude(), place.getLongitude());
+            mMap.addMarker(new MarkerOptions()
+                .title(place.getTitle())
+                .position(placeCoord));
+        }
+    }
+
+    private void showPlace(Place place) {
+        LatLng placeCoord = new LatLng(place.getLatitude(), place.getLongitude());
+        mMap.addMarker(new MarkerOptions()
+                .title(place.getTitle())
+                .position(placeCoord));
     }
 
 }

@@ -12,7 +12,7 @@ public class RetrofitFactory {
     private RetrofitFactory() { };
 
     private final static Retrofit RETROFIT_INSTANCE = new Retrofit.Builder()
-            .baseUrl("http://aviaj-backend-travis.herokuapp.com/api/places/")
+            .baseUrl("http://aviaj-backend-travis.herokuapp.com/")
             .addConverterFactory(GsonConverterFactory.create())
             .build();
 

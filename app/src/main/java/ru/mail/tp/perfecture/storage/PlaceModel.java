@@ -6,11 +6,13 @@ import com.raizlabs.android.dbflow.annotation.Table;
 import com.raizlabs.android.dbflow.annotation.Unique;
 import com.raizlabs.android.dbflow.structure.BaseModel;
 
+import ru.mail.tp.perfecture.api.Place;
+
 /**
  * Created by sibirsky on 14.04.17.
  */
 
-@Table(database = Configuration.activeDb)
+@Table(database = AppDatabase.class)
 public class PlaceModel extends BaseModel {
 
     @PrimaryKey
@@ -28,6 +30,8 @@ public class PlaceModel extends BaseModel {
 
     @Column
     private double longitude;
+
+    public PlaceModel() { super(); }
 
     public PlaceModel(long id, String title, String description, double latitude,
                       double longitude) {
@@ -71,5 +75,5 @@ public class PlaceModel extends BaseModel {
 
     public double getLongitude() { return longitude; }
 
-    public double setLongitude() { return longitude; }
+    public double setLongitude(double longitude) { return longitude; }
 }

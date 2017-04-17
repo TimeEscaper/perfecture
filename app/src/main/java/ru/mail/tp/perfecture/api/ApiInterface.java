@@ -10,10 +10,10 @@ import retrofit2.http.Query;
  */
 
 public interface ApiInterface {
-    @GET("/id/{id}")
+    @GET("/api/places/id/{id}")
     Call<Place> getPlaceById(@Path("id") long id);
 
-    @GET("/")
+    @GET("/api/places/")
     Call<PlaceList> getNearestPlaces(@Query("latitude") double latitude,
                                      @Query("longitude") double longitude);
 }
