@@ -109,7 +109,8 @@ public class MapActivity extends Activity
     }
 
     @Override
-    protected void onStop() {
+    protected void onStop(){
+        LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
         googleApiClient.disconnect();
         super.onStop();
     }
