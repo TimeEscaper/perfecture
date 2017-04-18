@@ -6,14 +6,17 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.view.View;
 import android.widget.RadioGroup;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -60,7 +63,8 @@ public class MapActivity extends Activity
 
     private boolean isPending;
 
-    public static final int PERMISSIONS_MULTIPLE_REQUEST = 1;
+    public static final int INIT_MAP = 1;
+    public static final int INIT_LOCATION = 2;
 
     static {
         StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
@@ -112,26 +116,174 @@ public class MapActivity extends Activity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            checkPermission(INIT_MAP);
 
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(this,
-                    new String[]{
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            android.Manifest.permission.ACCESS_COARSE_LOCATION
-                    },
-                    PERMISSIONS_MULTIPLE_REQUEST);
-
-
+        } else {
+            initializeMap();
         }
     }
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            checkPermission(INIT_MAP);
+
+        } else {
+            initializeLocation();
+        }
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        this.location = location;
+        if (location != null) {
+            Log.d("MapActivity", "Location: " + String.valueOf(location.getLatitude()) + ";" +
+                    String.valueOf(location.getLongitude()));
+        }
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        if (marker.getTag() != null) {
+            long markedPlace = (Long) marker.getTag();
+            Intent intent = new Intent(MapActivity.this, PlaceInfoActivity.class);
+            intent.putExtra(PlaceInfoActivity.EXTRA_PLACE_TAG, String.valueOf(markedPlace));
+            startActivity(intent);
+        }
+        return false;
+    }
+
+    private void startLocationUpdates() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            checkPermission(INIT_MAP);
+
+        } else {
+            LocationServices.FusedLocationApi.requestLocationUpdates(
+                    googleApiClient, locationRequest, this);
+        }
+
+    }
+
+    @SuppressWarnings("UnusedParameters")
+    private void onMapTypeChanged(RadioGroup group, int checkedId) {
+        switch (checkedId) {
+            case R.id.radio_map:
+                mapType = GoogleMap.MAP_TYPE_NORMAL;
+                break;
+            case R.id.radio_hybrid:
+                mapType = GoogleMap.MAP_TYPE_HYBRID;
+                break;
+            case R.id.radio_terrain:
+                mapType = GoogleMap.MAP_TYPE_TERRAIN;
+                break;
+            default:
+                mapType = GoogleMap.MAP_TYPE_NORMAL;
+                break;
+        }
+        mMap.setMapType(mapType);
+    }
+
+    private void alertMessage(String title, String text) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
+        builder.setMessage(text).setTitle(title);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void showPlaces(List<Place> places) {
+        for (Place place : places) {
+            LatLng placeCoord = new LatLng(place.getLatitude(), place.getLongitude());
+            mMap.addMarker(new MarkerOptions()
+                    .title(place.getTitle())
+                    .position(placeCoord)).setTag(place.getId());
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private void checkPermission(final int requestCode) {
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) + ActivityCompat
+                .checkSelfPermission(this,
+                        Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale
+                    (this, Manifest.permission.ACCESS_COARSE_LOCATION) ||
+                    ActivityCompat.shouldShowRequestPermissionRationale
+                            (this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+                Snackbar.make(this.findViewById(android.R.id.content),
+                        R.string.grant_permissions,
+                        Snackbar.LENGTH_INDEFINITE).setAction(R.string.enable,
+                        new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                requestPermissions(
+                                        new String[]{Manifest.permission
+                                                .ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
+                                        requestCode);
+                            }
+                        }).show();
+            } else {
+                requestPermissions(
+                        new String[]{Manifest.permission
+                                .ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
+                        requestCode);
+            }
+        } else {
+            initializeMap();
+        }
+    }
+
+    private void initializeMap() {
+        mMap.setMapType(mapType);
+        mMap.setOnMarkerClickListener(this);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            mMap.setMyLocationEnabled(true);
+        }
+
+        mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
+            @Override
+            public boolean onMyLocationButtonClick() {
+                if (isPending) {
+                    return false;
+                }
+                if (location != null) {
+                    isPending = true;
+                    ApiService.getInstance().getNearestPlaces(location.getLatitude(),
+                            location.getLongitude(),
+                            new ApiService.ApiCallback<PlaceList>() {
+                                @Override
+                                public void onSuccess(PlaceList result) {
+                                    isPending = false;
+                                    showPlaces(result.getPlaces());
+                                }
+
+                                @Override
+                                public void onError(Throwable t) {
+                                    Log.d("MapActivity", "Error!");
+                                }
+                            });
+                }
+                return false;
+            }
+        });
+    }
+
+    private void initializeLocation() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            alertMessage("Perfecture", "No permissions to access geolocations!");
-            finish();
             return;
         }
         location = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
@@ -171,139 +323,62 @@ public class MapActivity extends Activity
     }
 
     @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        this.location = location;
-        if (location != null) {
-            Log.d("MapActivity", "Location: " + String.valueOf(location.getLatitude()) + ";" +
-                    String.valueOf(location.getLongitude()));
-        }
-    }
-
-    @Override
-    public boolean onMarkerClick(Marker marker) {
-        if (marker.getTag() != null) {
-            long markedPlace = (Long) marker.getTag();
-            Intent intent = new Intent(MapActivity.this, PlaceInfoActivity.class);
-            intent.putExtra(PlaceInfoActivity.EXTRA_PLACE_TAG, String.valueOf(markedPlace));
-            startActivity(intent);
-        }
-        return false;
-    }
-
-    private void startLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            alertMessage("Perfecture", "No permissions to access geolocations!");
-            finish();
-            return;
-        }
-        LocationServices.FusedLocationApi.requestLocationUpdates(
-                googleApiClient, locationRequest, this);
-    }
-
-    @SuppressWarnings("UnusedParameters")
-    private void onMapTypeChanged(RadioGroup group, int checkedId) {
-        switch (checkedId) {
-            case R.id.radio_map:
-                mapType = GoogleMap.MAP_TYPE_NORMAL;
-                break;
-            case R.id.radio_hybrid:
-                mapType = GoogleMap.MAP_TYPE_HYBRID;
-                break;
-            case R.id.radio_terrain:
-                mapType = GoogleMap.MAP_TYPE_TERRAIN;
-                break;
-            default:
-                mapType = GoogleMap.MAP_TYPE_NORMAL;
-                break;
-        }
-        mMap.setMapType(mapType);
-    }
-
-    private void alertMessage(String title, String text) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
-        builder.setMessage(text).setTitle(title);
-        AlertDialog dialog = builder.create();
-        dialog.show();
-    }
-
-    private void showPlaces(List<Place> places) {
-        for (Place place : places) {
-            LatLng placeCoord = new LatLng(place.getLatitude(), place.getLongitude());
-            mMap.addMarker(new MarkerOptions()
-                    .title(place.getTitle())
-                    .position(placeCoord)).setTag(place.getId());
-        }
-    }
-
-    @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String[] permissions, @NonNull int[] grantResults) {
 
         switch (requestCode) {
-            case PERMISSIONS_MULTIPLE_REQUEST:
+            case INIT_MAP:
                 if (grantResults.length > 0) {
                     boolean fineLocation = grantResults[1] == PackageManager.PERMISSION_GRANTED;
-                    boolean coarseLocation = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                    boolean coaraseLocation = grantResults[0] == PackageManager.PERMISSION_GRANTED;
 
-                    if (fineLocation && coarseLocation) {
-                        mMap.setMapType(mapType);
-
-                        mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
-                            @Override
-                            public boolean onMyLocationButtonClick() {
-                                if (isPending) {
-                                    return false;
-                                }
-                                if (location != null) {
-                                    isPending = true;
-                                    ApiService.getInstance().getNearestPlaces(location.getLatitude(),
-                                            location.getLongitude(),
-                                            new ApiService.ApiCallback<PlaceList>() {
-                                                @Override
-                                                public void onSuccess(PlaceList result) {
-                                                    isPending = false;
-                                                    showPlaces(result.getPlaces());
-                                                }
-
-                                                @Override
-                                                public void onError(Throwable t) {
-                                                    Log.d("MapActivity", "Error!");
-                                                }
-                                            });
-                                }
-                                return false;
-                            }
-                        });
-
-                        mMap.setOnMarkerClickListener(this);
-                        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                            // TODO: Consider calling
-                            //    ActivityCompat#requestPermissions
-                            // here to request the missing permissions, and then overriding
-                            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                            //                                          int[] grantResults)
-                            // to handle the case where the user grants the permission. See the documentation
-                            // for ActivityCompat#requestPermissions for more details.
-                            return;
-                        }
-                        mMap.setMyLocationEnabled(true);
+                    if(fineLocation && coaraseLocation)
+                    {
+                        initializeMap();
                     } else {
-                        alertMessage("Perfecture", "No permissions to access geolocations!");
-                        finish();
+                        Snackbar.make(this.findViewById(android.R.id.content),
+                                R.string.grant_permissions,
+                                Snackbar.LENGTH_INDEFINITE).setAction(R.string.enable,
+                                new View.OnClickListener() {
+                                    @RequiresApi(api = Build.VERSION_CODES.M)
+                                    @Override
+                                    public void onClick(View v) {
+                                        requestPermissions(
+                                                new String[]{Manifest.permission
+                                                        .ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
+                                                INIT_MAP);
+                                    }
+                                }).show();
                     }
-                    break;
                 }
-        }
+                break;
 
+            case INIT_LOCATION:
+                if (grantResults.length > 0) {
+                    boolean fineLocation = grantResults[1] == PackageManager.PERMISSION_GRANTED;
+                    boolean coaraseLocation = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+
+                    if(fineLocation && coaraseLocation)
+                    {
+                        initializeLocation();
+                    } else {
+                        Snackbar.make(this.findViewById(android.R.id.content),
+                                R.string.grant_permissions,
+                                Snackbar.LENGTH_INDEFINITE).setAction(R.string.enable,
+                                new View.OnClickListener() {
+                                    @RequiresApi(api = Build.VERSION_CODES.M)
+                                    @Override
+                                    public void onClick(View v) {
+                                        requestPermissions(
+                                                new String[]{Manifest.permission
+                                                        .ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
+                                                INIT_LOCATION);
+                                    }
+                                }).show();
+                    }
+                }
+                break;
+        }
     }
+
 }
