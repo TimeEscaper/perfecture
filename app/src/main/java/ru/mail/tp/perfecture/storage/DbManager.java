@@ -1,5 +1,7 @@
 package ru.mail.tp.perfecture.storage;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.raizlabs.android.dbflow.annotation.Database;
@@ -25,6 +27,7 @@ public class DbManager {
     private static final DbManager ourInstance = new DbManager();
 
     private final Executor executor = Executors.newSingleThreadExecutor();
+    private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
     public static DbManager getInstance() {
         return ourInstance;
@@ -44,7 +47,7 @@ public class DbManager {
                     callback.onError("No such place!");
                     return;
                 }
-                Place place = new Place(placeModel.getId(), placeModel.getTitle(),
+                final Place place = new Place(placeModel.getId(), placeModel.getTitle(),
                         placeModel.getDescription(), placeModel.getLatitude(), placeModel.getLongitude());
                 List<PhotoLinkModel> photoLinks = SQLite.select()
                         .from(PhotoLinkModel.class)
@@ -56,7 +59,12 @@ public class DbManager {
                         photos.add(photoLink.getUrl());
                     }
                 }
-                callback.onSuccess(place);
+                uiHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        callback.onSuccess(place);
+                    }
+                });
             }
         });
     }

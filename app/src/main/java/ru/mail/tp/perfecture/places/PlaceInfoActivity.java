@@ -14,6 +14,7 @@ import ru.mail.tp.perfecture.R;
 import ru.mail.tp.perfecture.api.ApiInterface;
 import ru.mail.tp.perfecture.api.ApiService;
 import ru.mail.tp.perfecture.api.Place;
+import ru.mail.tp.perfecture.storage.DbManager;
 
 public class PlaceInfoActivity extends AppCompatActivity {
 
@@ -21,7 +22,6 @@ public class PlaceInfoActivity extends AppCompatActivity {
 
     private TextView txtPlaceTitle;
     private TextView txtPlaceDescription;
-    private TextView txtPlacePhotos;
     RecyclerView recyclerImages;
 
     static {
@@ -40,9 +40,8 @@ public class PlaceInfoActivity extends AppCompatActivity {
 
         txtPlaceTitle = (TextView) findViewById(R.id.place_title);
         txtPlaceDescription = (TextView) findViewById(R.id.place_description);
-        txtPlacePhotos = (TextView) findViewById(R.id.place_photos);
 
-        long placeId = Long.valueOf(getIntent().getStringExtra(EXTRA_PLACE_TAG));
+        final long placeId = Long.valueOf(getIntent().getStringExtra(EXTRA_PLACE_TAG));
 
         ApiService.getInstance().getPlace(placeId, new ApiService.ApiCallback<Place>() {
             @Override
@@ -52,7 +51,17 @@ public class PlaceInfoActivity extends AppCompatActivity {
 
             @Override
             public void onError() {
-                showError("Error retrieving place");
+                DbManager.getInstance().getPlace(placeId, new DbManager.queryCallback<Place>() {
+                    @Override
+                    public void onSuccess(Place result) {
+                        displayPlace(result);
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        showError("No such place!");
+                    }
+                });
             }
         });
     }
