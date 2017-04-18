@@ -48,7 +48,7 @@ public class MapActivity extends Activity
         GoogleApiClient.OnConnectionFailedListener, LocationListener,
         GoogleMap.OnMarkerClickListener {
 
-    private GoogleMap mMap;
+    public GoogleMap mMap;
     private GoogleApiClient googleApiClient;
     @SuppressWarnings("unused")
     private Location location;
@@ -59,6 +59,8 @@ public class MapActivity extends Activity
     private RadioGroup mapTypeGroup;
 
     private boolean isPending;
+
+    public static final int PERMISSIONS_MULTIPLE_REQUEST = 1;
 
     static {
         StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
@@ -110,42 +112,19 @@ public class MapActivity extends Activity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        mMap.setMapType(mapType);
 
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            alertMessage("Perfecture", "No permissions to access geolocations!");
-            finish();
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this,
+                    new String[]{
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            android.Manifest.permission.ACCESS_COARSE_LOCATION
+                    },
+                    PERMISSIONS_MULTIPLE_REQUEST);
+
+
         }
-
-        mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
-            @Override
-            public boolean onMyLocationButtonClick() {
-                if (isPending) {
-                    return false;
-                }
-                if (location != null) {
-                    isPending = true;
-                    ApiService.getInstance().getNearestPlaces(location.getLatitude(),
-                            location.getLongitude(),
-                            new ApiService.ApiCallback<PlaceList>() {
-                                @Override
-                                public void onSuccess(PlaceList result) {
-                                    isPending = false;
-                                    showPlaces(result.getPlaces());
-                                }
-
-                                @Override
-                                public void onError(Throwable t) {
-                                    Log.d("MapActivity", "Error!");
-                                }
-                            });
-                }
-                return false;
-            }
-        });
-
-        mMap.setOnMarkerClickListener(this);
-        mMap.setMyLocationEnabled(true);
     }
 
     @Override
@@ -153,6 +132,7 @@ public class MapActivity extends Activity
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             alertMessage("Perfecture", "No permissions to access geolocations!");
             finish();
+            return;
         }
         location = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
         if (location != null) {
@@ -224,6 +204,7 @@ public class MapActivity extends Activity
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             alertMessage("Perfecture", "No permissions to access geolocations!");
             finish();
+            return;
         }
         LocationServices.FusedLocationApi.requestLocationUpdates(
                 googleApiClient, locationRequest, this);
@@ -259,9 +240,70 @@ public class MapActivity extends Activity
         for (Place place : places) {
             LatLng placeCoord = new LatLng(place.getLatitude(), place.getLongitude());
             mMap.addMarker(new MarkerOptions()
-                .title(place.getTitle())
-                .position(placeCoord)).setTag(place.getId());
+                    .title(place.getTitle())
+                    .position(placeCoord)).setTag(place.getId());
         }
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions, @NonNull int[] grantResults) {
+
+        switch (requestCode) {
+            case PERMISSIONS_MULTIPLE_REQUEST:
+                if (grantResults.length > 0) {
+                    boolean fineLocation = grantResults[1] == PackageManager.PERMISSION_GRANTED;
+                    boolean coarseLocation = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+
+                    if (fineLocation && coarseLocation) {
+                        mMap.setMapType(mapType);
+
+                        mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
+                            @Override
+                            public boolean onMyLocationButtonClick() {
+                                if (isPending) {
+                                    return false;
+                                }
+                                if (location != null) {
+                                    isPending = true;
+                                    ApiService.getInstance().getNearestPlaces(location.getLatitude(),
+                                            location.getLongitude(),
+                                            new ApiService.ApiCallback<PlaceList>() {
+                                                @Override
+                                                public void onSuccess(PlaceList result) {
+                                                    isPending = false;
+                                                    showPlaces(result.getPlaces());
+                                                }
+
+                                                @Override
+                                                public void onError(Throwable t) {
+                                                    Log.d("MapActivity", "Error!");
+                                                }
+                                            });
+                                }
+                                return false;
+                            }
+                        });
+
+                        mMap.setOnMarkerClickListener(this);
+                        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                            // TODO: Consider calling
+                            //    ActivityCompat#requestPermissions
+                            // here to request the missing permissions, and then overriding
+                            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                            //                                          int[] grantResults)
+                            // to handle the case where the user grants the permission. See the documentation
+                            // for ActivityCompat#requestPermissions for more details.
+                            return;
+                        }
+                        mMap.setMyLocationEnabled(true);
+                    } else {
+                        alertMessage("Perfecture", "No permissions to access geolocations!");
+                        finish();
+                    }
+                    break;
+                }
+        }
+
+    }
 }
