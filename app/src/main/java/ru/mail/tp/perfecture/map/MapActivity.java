@@ -276,7 +276,7 @@ public class MapActivity extends Activity
                                                 }
 
                                                 @Override
-                                                public void onError(Throwable t) {
+                                                public void onError() {
                                                     Log.d("MapActivity", "Error!");
                                                 }
                                             });

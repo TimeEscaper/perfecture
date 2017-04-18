@@ -7,6 +7,7 @@ import com.google.android.gms.location.LocationListener;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import ru.mail.tp.perfecture.storage.DbManager;
 
 /**
  * Created by sibirsky on 17.04.17.
@@ -28,13 +29,23 @@ public class ApiService {
         call.enqueue(new Callback<Place>() {
             @Override
             public void onResponse(Call<Place> call, Response<Place> response) {
+                DbManager.getInstance().addPlace(response.body());
                 callback.onSuccess(response.body());
             }
 
             @Override
             public void onFailure(Call<Place> call, Throwable t) {
-                //TODO: check in storage
-                callback.onError(t);
+                DbManager.getInstance().getPlace(id, new DbManager.queryCallback<Place>() {
+                    @Override
+                    public void onSuccess(Place result) {
+                        callback.onSuccess(result);
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        callback.onError();
+                    }
+                });
             }
         });
     }
@@ -52,13 +63,13 @@ public class ApiService {
             @Override
             public void onFailure(Call<PlaceList> call, Throwable t) {
                 //TODO: check in storage
-                callback.onError(t);
+                callback.onError();
             }
         });
     }
 
     public interface ApiCallback<T> {
         void onSuccess(T result);
-        void onError(Throwable t);
+        void onError();
     }
 }

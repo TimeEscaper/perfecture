@@ -15,6 +15,7 @@ import ru.mail.tp.perfecture.api.Place;
 @Table(database = AppDatabase.class)
 public class PlaceModel extends BaseModel {
 
+    @Column
     @PrimaryKey
     @Unique
     private long id;

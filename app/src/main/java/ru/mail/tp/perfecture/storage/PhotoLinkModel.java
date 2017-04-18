@@ -13,6 +13,7 @@ import com.raizlabs.android.dbflow.structure.BaseModel;
 @Table(database = AppDatabase.class)
 public class PhotoLinkModel extends BaseModel {
 
+    @Column
     @PrimaryKey
     String url;
 

@@ -6,7 +6,12 @@ import com.raizlabs.android.dbflow.config.FlowManager;
 import com.raizlabs.android.dbflow.sql.language.SQLite;
 import com.raizlabs.android.dbflow.structure.database.DatabaseWrapper;
 import com.raizlabs.android.dbflow.structure.database.transaction.ITransaction;
+import com.raizlabs.android.dbflow.structure.database.transaction.QueryTransaction;
 import com.raizlabs.android.dbflow.structure.database.transaction.Transaction;
+
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import ru.mail.tp.perfecture.api.Place;
 
@@ -14,19 +19,44 @@ import ru.mail.tp.perfecture.api.Place;
  * Created by sibirsky on 14.04.17.
  */
 
-class DbManager {
+public class DbManager {
     private static final DbManager ourInstance = new DbManager();
 
-    static DbManager getInstance() {
+    private final Executor executor = Executors.newSingleThreadExecutor();
+
+    public static DbManager getInstance() {
         return ourInstance;
     }
 
     private DbManager() {
     }
 
-    //TODO: implement
-    public Place getPlace(long id) {
-        return null;
+    public void getPlace(long id, final queryCallback<Place> callback) {
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                PlaceModel placeModel = SQLite.select()
+                        .from(PlaceModel.class)
+                        .querySingle();
+                if (placeModel == null) {
+                    callback.onError("No such place!");
+                    return;
+                }
+                Place place = new Place(placeModel.getId(), placeModel.getTitle(),
+                        placeModel.getDescription(), placeModel.getLatitude(), placeModel.getLongitude());
+                List<PhotoLinkModel> photoLinks = SQLite.select()
+                        .from(PhotoLinkModel.class)
+                        .where(PhotoLinkModel_Table.placeId_id.eq(place.getId()))
+                        .queryList();
+                if (!photoLinks.isEmpty()) {
+                    List<String> photos = place.getPhotos();
+                    for (PhotoLinkModel photoLink : photoLinks) {
+                        photos.add(photoLink.getUrl());
+                    }
+                }
+                callback.onSuccess(place);
+            }
+        });
     }
 
     public void addPlace(final Place place) {
@@ -52,5 +82,21 @@ class DbManager {
         transaction.cancel();
     }
 
+    public void addPhoto(final long placeId, final String url) {
+        DatabaseDefinition database = FlowManager.getDatabase(Configuration.activeDb);
+        Transaction transaction = database.beginTransactionAsync(new ITransaction() {
+            @Override
+            public void execute(DatabaseWrapper databaseWrapper) {
+                PhotoLinkModel photoLinkModel = new PhotoLinkModel(url, placeId);
+                photoLinkModel.save(databaseWrapper);
+            }
+        }).build();
+        transaction.execute();
+        transaction.cancel();
+    }
 
+    public interface queryCallback<T> {
+        void onSuccess(T result);
+        void onError(String message);
+    }
 }

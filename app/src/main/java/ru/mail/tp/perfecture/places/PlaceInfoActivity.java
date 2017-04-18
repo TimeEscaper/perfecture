@@ -51,7 +51,7 @@ public class PlaceInfoActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onError(Throwable t) {
+            public void onError() {
                 showError("Error retrieving place");
             }
         });
