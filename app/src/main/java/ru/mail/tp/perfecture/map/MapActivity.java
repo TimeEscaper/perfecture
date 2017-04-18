@@ -65,6 +65,7 @@ public class MapActivity extends Activity
 
     public static final int INIT_MAP = 1;
     public static final int INIT_LOCATION = 2;
+    public static final int FUSED_LOCATION = 3;
 
     static {
         StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
@@ -167,13 +168,12 @@ public class MapActivity extends Activity
 
     private void startLocationUpdates() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            checkPermission(INIT_MAP);
+            checkPermission(FUSED_LOCATION);
 
         } else {
             LocationServices.FusedLocationApi.requestLocationUpdates(
                     googleApiClient, locationRequest, this);
         }
-
     }
 
     @SuppressWarnings("UnusedParameters")
@@ -243,7 +243,19 @@ public class MapActivity extends Activity
                         requestCode);
             }
         } else {
-            initializeMap();
+            switch (requestCode) {
+                case INIT_MAP:
+                    initializeMap();
+                    break;
+
+                case INIT_LOCATION:
+                    initializeLocation();
+                    break;
+                case FUSED_LOCATION:
+                    LocationServices.FusedLocationApi.requestLocationUpdates(
+                            googleApiClient, locationRequest, this);
+                    break;
+            }
         }
     }
 
@@ -332,8 +344,7 @@ public class MapActivity extends Activity
                     boolean fineLocation = grantResults[1] == PackageManager.PERMISSION_GRANTED;
                     boolean coaraseLocation = grantResults[0] == PackageManager.PERMISSION_GRANTED;
 
-                    if(fineLocation && coaraseLocation)
-                    {
+                    if (fineLocation && coaraseLocation) {
                         initializeMap();
                     } else {
                         Snackbar.make(this.findViewById(android.R.id.content),
@@ -358,8 +369,7 @@ public class MapActivity extends Activity
                     boolean fineLocation = grantResults[1] == PackageManager.PERMISSION_GRANTED;
                     boolean coarseLocation = grantResults[0] == PackageManager.PERMISSION_GRANTED;
 
-                    if(fineLocation && coarseLocation)
-                    {
+                    if (fineLocation && coarseLocation) {
                         initializeLocation();
                     } else {
                         Snackbar.make(this.findViewById(android.R.id.content),
@@ -377,6 +387,14 @@ public class MapActivity extends Activity
                                 }).show();
                     }
                 }
+                break;
+
+            case FUSED_LOCATION:
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    return;
+                }
+                LocationServices.FusedLocationApi.requestLocationUpdates(
+                        googleApiClient, locationRequest, this);
                 break;
         }
     }
