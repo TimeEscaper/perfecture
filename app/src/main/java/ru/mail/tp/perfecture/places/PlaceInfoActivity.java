@@ -3,6 +3,8 @@ package ru.mail.tp.perfecture.places;
 import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -20,6 +22,7 @@ public class PlaceInfoActivity extends AppCompatActivity {
     private TextView txtPlaceTitle;
     private TextView txtPlaceDescription;
     private TextView txtPlacePhotos;
+    RecyclerView recyclerImages;
 
     static {
         StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
@@ -59,6 +62,11 @@ public class PlaceInfoActivity extends AppCompatActivity {
         txtPlaceDescription.setText(place.getDescription());
         if (place.getPhotos() != null) {
             txtPlacePhotos.setText(String.valueOf(place.getPhotos().size()));
+        }
+        if (place.getPhotos() != null) {
+            recyclerImages = (RecyclerView) findViewById(R.id.images);
+            recyclerImages.setLayoutManager(new LinearLayoutManager(this));
+            recyclerImages.setAdapter(new ImageAdapter(this, place.getPhotos()));
         }
     }
 
