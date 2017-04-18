@@ -348,18 +348,18 @@ public class MapActivity extends Activity
                         initializeMap();
                     } else {
                         Snackbar.make(this.findViewById(android.R.id.content),
-                                R.string.grant_permissions,
-                                Snackbar.LENGTH_INDEFINITE).setAction(R.string.enable,
-                                new View.OnClickListener() {
-                                    @RequiresApi(api = Build.VERSION_CODES.M)
-                                    @Override
-                                    public void onClick(View v) {
-                                        requestPermissions(
-                                                new String[]{Manifest.permission
-                                                        .ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
-                                                INIT_MAP);
-                                    }
-                                }).show();
+                            R.string.grant_permissions,
+                            Snackbar.LENGTH_INDEFINITE).setAction(R.string.enable,
+                            new View.OnClickListener() {
+                                @RequiresApi(api = Build.VERSION_CODES.M)
+                                @Override
+                                public void onClick(View v) {
+                                    requestPermissions(
+                                            new String[]{Manifest.permission
+                                                    .ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
+                                            INIT_MAP);
+                                }
+                            }).show();
                     }
                 }
                 break;
@@ -373,28 +373,50 @@ public class MapActivity extends Activity
                         initializeLocation();
                     } else {
                         Snackbar.make(this.findViewById(android.R.id.content),
-                                R.string.grant_permissions,
-                                Snackbar.LENGTH_INDEFINITE).setAction(R.string.enable,
-                                new View.OnClickListener() {
-                                    @RequiresApi(api = Build.VERSION_CODES.M)
-                                    @Override
-                                    public void onClick(View v) {
-                                        requestPermissions(
-                                                new String[]{Manifest.permission
-                                                        .ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
-                                                INIT_LOCATION);
-                                    }
-                                }).show();
+                            R.string.grant_permissions,
+                            Snackbar.LENGTH_INDEFINITE).setAction(R.string.enable,
+                            new View.OnClickListener() {
+                                @RequiresApi(api = Build.VERSION_CODES.M)
+                                @Override
+                                public void onClick(View v) {
+                                    requestPermissions(
+                                            new String[]{Manifest.permission
+                                                    .ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
+                                            INIT_LOCATION);
+                                }
+                            }).show();
                     }
                 }
                 break;
 
             case FUSED_LOCATION:
-                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    return;
+                if (grantResults.length > 0) {
+                    boolean fineLocation = grantResults[1] == PackageManager.PERMISSION_GRANTED;
+                    boolean coarseLocation = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+
+                    if (fineLocation && coarseLocation) {
+                        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                            return;
+                        }
+                        LocationServices.FusedLocationApi.requestLocationUpdates(
+                                googleApiClient, locationRequest, this);
+                    } else {
+                        Snackbar.make(this.findViewById(android.R.id.content),
+                            R.string.grant_permissions,
+                            Snackbar.LENGTH_INDEFINITE).setAction(R.string.enable,
+                            new View.OnClickListener() {
+                                @RequiresApi(api = Build.VERSION_CODES.M)
+                                @Override
+                                public void onClick(View v) {
+                                    requestPermissions(
+                                            new String[]{Manifest.permission
+                                                    .ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
+                                            FUSED_LOCATION);
+                                }
+                            }).show();
+                    }
                 }
-                LocationServices.FusedLocationApi.requestLocationUpdates(
-                        googleApiClient, locationRequest, this);
+
                 break;
         }
     }
