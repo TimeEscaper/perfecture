@@ -127,7 +127,7 @@ public class MapActivity extends Activity
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            checkPermission(INIT_MAP);
+            checkPermission(INIT_LOCATION);
 
         } else {
             initializeLocation();
@@ -356,9 +356,9 @@ public class MapActivity extends Activity
             case INIT_LOCATION:
                 if (grantResults.length > 0) {
                     boolean fineLocation = grantResults[1] == PackageManager.PERMISSION_GRANTED;
-                    boolean coaraseLocation = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+                    boolean coarseLocation = grantResults[0] == PackageManager.PERMISSION_GRANTED;
 
-                    if(fineLocation && coaraseLocation)
+                    if(fineLocation && coarseLocation)
                     {
                         initializeLocation();
                     } else {
