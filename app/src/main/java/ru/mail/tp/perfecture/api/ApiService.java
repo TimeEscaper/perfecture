@@ -28,7 +28,6 @@ public class ApiService {
         call.enqueue(new Callback<Place>() {
             @Override
             public void onResponse(Call<Place> call, Response<Place> response) {
-                Log.d("API", call.request().toString());
                 callback.onSuccess(response.body());
             }
 

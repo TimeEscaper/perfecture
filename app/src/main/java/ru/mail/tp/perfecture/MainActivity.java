@@ -1,6 +1,7 @@
 package ru.mail.tp.perfecture;
 
 import android.content.Intent;
+import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -11,6 +12,15 @@ import ru.mail.tp.perfecture.map.MapActivity;
 public class MainActivity extends AppCompatActivity {
 
     private Button btnOpenMap;
+
+    static {
+        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                .detectActivityLeaks()
+                .penaltyLog()
+                .penaltyDeath()
+                .build()
+        );
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

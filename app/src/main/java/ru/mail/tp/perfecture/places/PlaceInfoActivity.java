@@ -3,6 +3,8 @@ package ru.mail.tp.perfecture.places;
 import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -61,7 +63,6 @@ public class PlaceInfoActivity extends AppCompatActivity {
     }
 
     private void showError(String text) {
-        Toast.makeText(this, text, Toast.LENGTH_SHORT);
         finish();
     }
 }
