@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Perfecture</string>
     <string name="title_activity_maps">Map</string>
-    <string name="grant_permissions">Grant Permissions to know whats nearbyadb </string>
+    <string name="grant_permissions">Grant Permissions to know what`s nearby</string>
     <string name="enable">ENABLE</string>
 </resources>
