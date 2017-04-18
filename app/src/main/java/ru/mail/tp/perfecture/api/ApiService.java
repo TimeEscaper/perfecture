@@ -35,17 +35,7 @@ public class ApiService {
 
             @Override
             public void onFailure(Call<Place> call, Throwable t) {
-                DbManager.getInstance().getPlace(id, new DbManager.queryCallback<Place>() {
-                    @Override
-                    public void onSuccess(Place result) {
-                        callback.onSuccess(result);
-                    }
-
-                    @Override
-                    public void onError(String message) {
-                        callback.onError();
-                    }
-                });
+                callback.onError();
             }
         });
     }
@@ -62,7 +52,6 @@ public class ApiService {
 
             @Override
             public void onFailure(Call<PlaceList> call, Throwable t) {
-                //TODO: check in storage
                 callback.onError();
             }
         });

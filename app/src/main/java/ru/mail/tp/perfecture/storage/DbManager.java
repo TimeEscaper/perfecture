@@ -1,5 +1,7 @@
 package ru.mail.tp.perfecture.storage;
 
+import android.util.Log;
+
 import com.raizlabs.android.dbflow.annotation.Database;
 import com.raizlabs.android.dbflow.config.DatabaseDefinition;
 import com.raizlabs.android.dbflow.config.FlowManager;
@@ -77,9 +79,19 @@ public class DbManager {
                     newPhoto.save(databaseWrapper);
                 }
             }
+        }).success(new Transaction.Success() {
+            @Override
+            public void onSuccess(Transaction transaction) {
+                Log.d("dfs", "Success!");
+            }
+        }).error(new Transaction.Error() {
+            @Override
+            public void onError(Transaction transaction, Throwable throwable) {
+                Log.d("fsdf", "Error!");
+            }
         }).build();
+
         transaction.execute();
-        transaction.cancel();
     }
 
     public void addPhoto(final long placeId, final String url) {

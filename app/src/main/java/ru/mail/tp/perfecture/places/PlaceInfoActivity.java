@@ -60,10 +60,7 @@ public class PlaceInfoActivity extends AppCompatActivity {
     private void displayPlace(Place place) {
         txtPlaceTitle.setText(place.getTitle());
         txtPlaceDescription.setText(place.getDescription());
-        if (place.getPhotos() != null) {
-            txtPlacePhotos.setText(String.valueOf(place.getPhotos().size()));
-        }
-        if (place.getPhotos() != null) {
+        if ((place.getPhotos() != null) && (place.getPhotos().size() != 0)) {
             recyclerImages = (RecyclerView) findViewById(R.id.images);
             recyclerImages.setLayoutManager(new LinearLayoutManager(this));
             recyclerImages.setAdapter(new ImageAdapter(this, place.getPhotos()));
