@@ -108,8 +108,6 @@ public class MapActivity extends Activity
         googleApiClient.connect();
     }
 
-
-
     @Override
     protected void onStop(){
         googleApiClient.disconnect();
@@ -422,5 +420,4 @@ public class MapActivity extends Activity
                 break;
         }
     }
-
 }
