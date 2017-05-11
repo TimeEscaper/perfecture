@@ -16,6 +16,8 @@ import ru.mail.tp.perfecture.storage.DbManager;
 public class ApiService {
     private static final ApiService ourInstance = new ApiService();
 
+    final ApiInterface apiInterface = RetrofitFactory.getApi().create(ApiInterface.class);
+
     public static ApiService getInstance() {
         return ourInstance;
     }
@@ -24,7 +26,6 @@ public class ApiService {
     }
 
     public void getPlace(final long id, final ApiCallback<Place> callback) {
-        final ApiInterface apiInterface = RetrofitFactory.getApi().create(ApiInterface.class);
         final Call<Place> call = apiInterface.getPlaceById(id);
         call.enqueue(new Callback<Place>() {
             @Override
