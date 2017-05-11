@@ -102,19 +102,6 @@ public class DbManager {
         transaction.execute();
     }
 
-    public void addPhoto(final long placeId, final String url) {
-        DatabaseDefinition database = FlowManager.getDatabase(Configuration.activeDb);
-        Transaction transaction = database.beginTransactionAsync(new ITransaction() {
-            @Override
-            public void execute(DatabaseWrapper databaseWrapper) {
-                PhotoLinkModel photoLinkModel = new PhotoLinkModel(url, placeId);
-                photoLinkModel.save(databaseWrapper);
-            }
-        }).build();
-        transaction.execute();
-        transaction.cancel();
-    }
-
     public interface queryCallback<T> {
         void onSuccess(T result);
         void onError(String message);
