@@ -24,15 +24,6 @@ public class PlaceInfoActivity extends AppCompatActivity {
     private TextView txtPlaceDescription;
     RecyclerView recyclerImages;
 
-    static {
-        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
-                .detectActivityLeaks()
-                .penaltyLog()
-                .penaltyDeath()
-                .build()
-        );
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
