@@ -8,7 +8,6 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.StrictMode;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
@@ -40,17 +39,17 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import java.util.List;
 
 import ru.mail.tp.perfecture.R;
-import ru.mail.tp.perfecture.api.ApiService;
 import ru.mail.tp.perfecture.api.Place;
 import ru.mail.tp.perfecture.api.PlaceList;
 import ru.mail.tp.perfecture.places.PlaceInfoActivity;
+import ru.mail.tp.perfecture.places.PlaceManager;
 
 @SuppressWarnings("FieldCanBeLocal")
 public class MapActivity extends Activity
         implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener,
         GoogleMap.OnMarkerClickListener {
-
+    private static final String TAG = MapActivity.class.getName();
     public GoogleMap mMap;
     private GoogleApiClient googleApiClient;
     @SuppressWarnings("unused")
@@ -265,9 +264,9 @@ public class MapActivity extends Activity
                 }
                 if (location != null) {
                     isPending = true;
-                    ApiService.getInstance().getNearestPlaces(location.getLatitude(),
+                    PlaceManager.getInstance().getInstance().getNearestPlaces(location.getLatitude(),
                             location.getLongitude(),
-                            new ApiService.ApiCallback<PlaceList>() {
+                            new PlaceManager.ManagerCallback<PlaceList>() {
                                 @Override
                                 public void onSuccess(PlaceList result) {
                                     isPending = false;
@@ -275,8 +274,9 @@ public class MapActivity extends Activity
                                 }
 
                                 @Override
-                                public void onError() {
-                                    Log.d("MapActivity", "Error!");
+                                public void onError(String message) {
+                                    isPending = false;
+                                    Log.d(MapActivity.TAG, "Error: " + message);
                                 }
                             });
                 }
@@ -291,7 +291,7 @@ public class MapActivity extends Activity
         }
         location = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
         if (location != null) {
-            Log.d("MapActivity", "Location: " + String.valueOf(location.getLatitude()) + ";" +
+            Log.d(MapActivity.TAG, "Location: " + String.valueOf(location.getLatitude()) + ";" +
                     String.valueOf(location.getLongitude()));
         }
         locationRequest.setInterval(10000);

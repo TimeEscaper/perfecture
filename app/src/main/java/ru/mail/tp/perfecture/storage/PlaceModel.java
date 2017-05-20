@@ -6,12 +6,6 @@ import com.raizlabs.android.dbflow.annotation.Table;
 import com.raizlabs.android.dbflow.annotation.Unique;
 import com.raizlabs.android.dbflow.structure.BaseModel;
 
-import ru.mail.tp.perfecture.api.Place;
-
-/**
- * Created by sibirsky on 14.04.17.
- */
-
 @Table(database = AppDatabase.class)
 public class PlaceModel extends BaseModel {
 

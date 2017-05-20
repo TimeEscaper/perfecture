@@ -6,10 +6,7 @@ import com.raizlabs.android.dbflow.annotation.PrimaryKey;
 import com.raizlabs.android.dbflow.annotation.Table;
 import com.raizlabs.android.dbflow.structure.BaseModel;
 
-/**
- * Created by sibirsky on 14.04.17.
- */
-
+@SuppressWarnings("unused")
 @Table(database = AppDatabase.class)
 public class PhotoLinkModel extends BaseModel {
 

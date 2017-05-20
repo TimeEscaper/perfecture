@@ -16,7 +16,7 @@ public class RetrofitFactory {
             .addConverterFactory(GsonConverterFactory.create())
             .build();
 
-    static Retrofit getApi() {
+    public static Retrofit getApi() {
         return RETROFIT_INSTANCE;
     }
 }

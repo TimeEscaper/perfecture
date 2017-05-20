@@ -1,23 +1,18 @@
 package ru.mail.tp.perfecture.places;
 
-import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.View;
-import android.widget.Button;
+import android.util.Log;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import ru.mail.tp.perfecture.R;
-import ru.mail.tp.perfecture.api.ApiInterface;
-import ru.mail.tp.perfecture.api.ApiService;
 import ru.mail.tp.perfecture.api.Place;
 import ru.mail.tp.perfecture.storage.DbManager;
 
 public class PlaceInfoActivity extends AppCompatActivity {
-
+    private static final String TAG = PlaceInfoActivity.class.getName();
     public static final String EXTRA_PLACE_TAG = "EXTRA_PLACE_ID";
 
     private TextView txtPlaceTitle;
@@ -34,14 +29,14 @@ public class PlaceInfoActivity extends AppCompatActivity {
 
         final long placeId = Long.valueOf(getIntent().getStringExtra(EXTRA_PLACE_TAG));
 
-        ApiService.getInstance().getPlace(placeId, new ApiService.ApiCallback<Place>() {
+        PlaceManager.getInstance().getPlace(placeId, new PlaceManager.ManagerCallback<Place>() {
             @Override
             public void onSuccess(Place result) {
                 displayPlace(result);
             }
 
             @Override
-            public void onError() {
+            public void onError(String message) {
                 DbManager.getInstance().getPlace(placeId, new DbManager.queryCallback<Place>() {
                     @Override
                     public void onSuccess(Place result) {
@@ -50,7 +45,7 @@ public class PlaceInfoActivity extends AppCompatActivity {
 
                     @Override
                     public void onError(String message) {
-                        showError("No such place!");
+                        showError(message);
                     }
                 });
             }
@@ -68,6 +63,7 @@ public class PlaceInfoActivity extends AppCompatActivity {
     }
 
     private void showError(String text) {
+        Log.d(PlaceInfoActivity.TAG, text);
         finish();
     }
 }

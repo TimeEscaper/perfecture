@@ -1,16 +1,12 @@
 package ru.mail.tp.perfecture.storage;
 
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
-import com.raizlabs.android.dbflow.annotation.Database;
 import com.raizlabs.android.dbflow.config.DatabaseDefinition;
 import com.raizlabs.android.dbflow.config.FlowManager;
 import com.raizlabs.android.dbflow.sql.language.SQLite;
 import com.raizlabs.android.dbflow.structure.database.DatabaseWrapper;
 import com.raizlabs.android.dbflow.structure.database.transaction.ITransaction;
-import com.raizlabs.android.dbflow.structure.database.transaction.QueryTransaction;
 import com.raizlabs.android.dbflow.structure.database.transaction.Transaction;
 
 import java.util.List;
@@ -19,15 +15,11 @@ import java.util.concurrent.Executors;
 
 import ru.mail.tp.perfecture.api.Place;
 
-/**
- * Created by sibirsky on 14.04.17.
- */
-
 public class DbManager {
+    private static final String TAG = DbManager.class.getName();
     private static final DbManager ourInstance = new DbManager();
 
     private final Executor executor = Executors.newSingleThreadExecutor();
-    private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
     public static DbManager getInstance() {
         return ourInstance;
@@ -36,15 +28,16 @@ public class DbManager {
     private DbManager() {
     }
 
-    public void getPlace(long id, final queryCallback<Place> callback) {
+    public void getPlace(final long id, final queryCallback<Place> callback) {
         executor.execute(new Runnable() {
             @Override
             public void run() {
                 PlaceModel placeModel = SQLite.select()
                         .from(PlaceModel.class)
+                        .where(PlaceModel_Table.id.eq(id))
                         .querySingle();
                 if (placeModel == null) {
-                    callback.onError("No such place!");
+                    callback.onError("Place not found in local database");
                     return;
                 }
                 final Place place = new Place(placeModel.getId(), placeModel.getTitle(),
@@ -59,12 +52,7 @@ public class DbManager {
                         photos.add(photoLink.getUrl());
                     }
                 }
-                uiHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        callback.onSuccess(place);
-                    }
-                });
+                callback.onSuccess(place);
             }
         });
     }
@@ -82,20 +70,22 @@ public class DbManager {
                         place.getLongitude());
                 newPlace.save(databaseWrapper);
 
-                for (String photo : place.getPhotos()) {
-                    PhotoLinkModel newPhoto = new PhotoLinkModel(photo, place.getId());
-                    newPhoto.save(databaseWrapper);
+                if ((place.getPhotos() != null) && (!place.getPhotos().isEmpty())) {
+                    for (String photo : place.getPhotos()) {
+                        PhotoLinkModel newPhoto = new PhotoLinkModel(photo, place.getId());
+                        newPhoto.save(databaseWrapper);
+                    }
                 }
             }
         }).success(new Transaction.Success() {
             @Override
             public void onSuccess(Transaction transaction) {
-                Log.d("dfs", "Success!");
             }
         }).error(new Transaction.Error() {
             @Override
             public void onError(Transaction transaction, Throwable throwable) {
-                Log.d("fsdf", "Error!");
+                Log.d(DbManager.TAG, "Transaction error: " +  throwable.getMessage());
+                throwable.printStackTrace();
             }
         }).build();
 
