@@ -5,11 +5,14 @@ import android.os.Looper;
 import android.util.Log;
 
 import java.lang.ref.WeakReference;
+import java.util.HashMap;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import ru.mail.tp.perfecture.api.ApiInterface;
+import ru.mail.tp.perfecture.api.CachedObject;
 import ru.mail.tp.perfecture.api.Place;
 import ru.mail.tp.perfecture.api.PlaceList;
 import ru.mail.tp.perfecture.api.RetrofitFactory;
@@ -22,20 +25,65 @@ public class PlaceManager {
     private final ApiInterface perfectureApi = RetrofitFactory.getApi().create(ApiInterface.class);
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
+    private final Map<Integer, ManagerListener> listeners = new HashMap<>();
+    private final Map<Integer, CachedObject> requestCache = new HashMap<>();
+    private Integer idCounter = 1;
+
     public static PlaceManager getInstance() {
         return ourInstance;
     }
 
-    public void getPlace(final long id, final ManagerCallback<Place> callback) {
-        final Call<Place> call = perfectureApi.getPlaceById(id);
+    public <T> Integer registerListener(ManagerListener<T> listener) {
+        listeners.put(idCounter, listener);
+        return idCounter++;
+    }
+
+    public void unRegisterListener(Integer listenerId) {
+        listeners.remove(listenerId);
+        requestCache.remove(listenerId);
+    }
+
+
+    public <T> void subscribeListener(Integer listenerId, ManagerListener<T> listener) {
+        listeners.put(listenerId, listener);
+        if (requestCache.containsKey(listenerId)) {
+            CachedObject result = requestCache.remove(listenerId);
+            if (result.getError() != null) {
+                listener.onManagerSuccess((T)result.getObject());
+            } else {
+                listener.onManagerError(result.getError());
+            }
+        }
+    }
+
+    public void unSubscribeListener(Integer listenerId) {
+        if (listeners.containsKey(listenerId)) {
+            listeners.put(listenerId, null);
+        }
+    }
+
+    public void getPlace(final long placeId, final Integer listenerId) {
+        final Call<Place> call = perfectureApi.getPlaceById(placeId);
         call.enqueue(new Callback<Place>() {
             @Override
-            public void onResponse(Call<Place> call, Response<Place> response) {
+            public void onResponse(Call<Place> call, final Response<Place> response) {
                 if (response.isSuccessful()) {
                     DbManager.getInstance().addPlace(response.body());
-                    postUiSuccess(response.body(), callback);
+                    if (listeners.containsKey(listenerId)) {
+                        final ManagerListener<Place> listener = listeners.get(listenerId);
+                        if (listener != null) {
+                            uiHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    listener.onManagerSuccess(response.body());
+                                }
+                            });
+                        } else {
+                            requestCache.put(listenerId, new CachedObject(response.body()));
+                        }
+                    }
                 } else {
-                    retrievePlaceFromDB(id, callback);
+                    retrievePlaceFromDB(placeId, listenerId);
                 }
             }
 
@@ -43,21 +91,43 @@ public class PlaceManager {
             public void onFailure(Call<Place> call, Throwable t) {
                 Log.d(PlaceManager.TAG, "Retrofit callback error: " + t.getMessage());
                 t.printStackTrace();
-                retrievePlaceFromDB(id, callback);
+                retrievePlaceFromDB(placeId, listenerId);
             }
         });
     }
 
     public void getNearestPlaces(final double latitude, final double longitude,
-                                 final ManagerCallback<PlaceList> callback) {
+                                 final Integer listenerId) {
         final  Call<PlaceList> call = perfectureApi.getNearestPlaces(latitude, longitude);
         call.enqueue(new Callback<PlaceList>() {
             @Override
-            public void onResponse(Call<PlaceList> call, Response<PlaceList> response) {
+            public void onResponse(Call<PlaceList> call, final Response<PlaceList> response) {
                 if (response.isSuccessful()) {
-                    postUiSuccess(response.body(), callback);
+                    if (listeners.containsKey(listenerId)) {
+                        final ManagerListener<PlaceList> listener = listeners.get(listenerId);
+                        if (listener != null) {
+                            uiHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    listener.onManagerSuccess(response.body());
+                                }
+                            });
+                        } else {
+                            requestCache.put(listenerId, new CachedObject(response.body()));
+                        }
+                    }
                 } else {
-                    postUiError("Unable to get nearest places", callback);
+                    final ManagerListener<PlaceList> listener = listeners.get(listenerId);
+                    if (listener != null) {
+                        uiHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                listener.onManagerSuccess(response.body());
+                            }
+                        });
+                    } else {
+                        requestCache.put(listenerId, new CachedObject(response.body()));
+                    }
                 }
             }
 
@@ -65,49 +135,62 @@ public class PlaceManager {
             public void onFailure(Call<PlaceList> call, Throwable t) {
                 Log.d(PlaceManager.TAG, "Retrofit callback error: " + t.getMessage());
                 t.printStackTrace();
-                postUiError("Unable to get nearest places", callback);
+                if (listeners.containsKey(listenerId)) {
+                    ManagerListener<Place> listener = listeners.get(listenerId);
+                    if (listener != null) {
+                        listener.onManagerError("Unable to get nearest places!");
+                    } else {
+                        requestCache.put(listenerId, new CachedObject("Unable to get nearest places!"));
+                    }
+                }
             }
         });
-
     }
 
     private PlaceManager() {
     }
 
-    private void retrievePlaceFromDB(final long id, final ManagerCallback callback) {
-        DbManager.getInstance().getPlace(id, new DbManager.queryCallback<Place>() {
+    private void retrievePlaceFromDB(final long placeId, final Integer listenerId) {
+        DbManager.getInstance().getPlace(placeId, new DbManager.queryCallback<Place>() {
             @Override
-            public void onSuccess(Place result) {
-                postUiSuccess(result, callback);
+            public void onSuccess(final Place result) {
+                if (listeners.containsKey(listenerId)) {
+                    final ManagerListener<Place> listener = listeners.get(listenerId);
+                    if (listener != null) {
+                        uiHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                listener.onManagerSuccess(result);
+                            }
+                        });;
+                    } else {
+                        requestCache.put(listenerId, new CachedObject(result));
+                    }
+                }
             }
 
             @Override
             public void onError(String message) {
-                postUiError("Unable to get object", callback);
+                if (listeners.containsKey(listenerId)) {
+                    final ManagerListener<Place> listener = listeners.get(listenerId);
+                    if (listener != null) {
+                        uiHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                listener.onManagerError("Unable to retrieve place!");
+                            }
+                        });
+                    } else {
+                        requestCache.put(listenerId, new CachedObject("Unable to retrieve place!"));
+                    }
+                }
             }
         });
     }
 
-    private <T> void postUiSuccess(final T response, final ManagerCallback<T> callback) {
-        uiHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                callback.onSuccess(response);
-            }
-        });
-    }
 
-    private void postUiError(final String message, final ManagerCallback callback) {
-        uiHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                callback.onError(message);
-            }
-        });
-    }
-
-    public interface ManagerCallback<T> {
-        void onSuccess(T result);
-        void onError(String message);
+    public interface ManagerListener<T> {
+        void onManagerSuccess(T result);
+        void onManagerError(String message);
     }
 }
