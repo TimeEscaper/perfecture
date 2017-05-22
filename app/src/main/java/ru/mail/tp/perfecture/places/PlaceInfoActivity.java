@@ -2,31 +2,35 @@ package ru.mail.tp.perfecture.places;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.widget.TextView;
 
 import ru.mail.tp.perfecture.R;
 import ru.mail.tp.perfecture.api.Place;
-import ru.mail.tp.perfecture.storage.DbManager;
+import ru.mail.tp.perfecture.api.PlaceError;
+import ru.mail.tp.perfecture.api.PlaceList;
+import ru.mail.tp.perfecture.places.manager.PlaceManager;
 
+@SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class PlaceInfoActivity extends AppCompatActivity
-        implements PlaceManager.ManagerListener<Place> {
+        implements PlaceManager.ManagerListener {
+
     private static final String TAG = PlaceInfoActivity.class.getName();
     private static final String STATE_LISTENER_ID = "listenerId";
+    private static final String STATE_PENDING = "pending";
 
     public static final String EXTRA_PLACE_TAG = "EXTRA_PLACE_ID";
 
     private TextView txtPlaceTitle;
     private TextView txtPlaceDescription;
-    RecyclerView recyclerImages;
+    private RecyclerView recyclerImages;
 
-    private Integer listenerId;
+    private int listenerId = 0;
     private long placeId;
-    private boolean isDisplayed = false;
+    private boolean isPending = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,18 +43,22 @@ public class PlaceInfoActivity extends AppCompatActivity
 
         if (savedInstanceState != null) {
             listenerId = savedInstanceState.getInt(STATE_LISTENER_ID);
+            isPending = savedInstanceState.getBoolean(STATE_PENDING);
         }
-        Log.d(TAG, String.valueOf(listenerId));
+
+        if (listenerId == 0) {
+            listenerId = PlaceManager.getInstance().registerListener(this);
+        }
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        if (listenerId == null) {
-            listenerId = PlaceManager.getInstance().registerListener(this);
-        }
         PlaceManager.getInstance().subscribeListener(listenerId, this);
-        PlaceManager.getInstance().getPlace(placeId, listenerId);
+        if (!isPending) {
+            isPending = true;
+            PlaceManager.getInstance().getPlace(placeId, listenerId);
+        }
     }
 
     @Override
@@ -68,23 +76,27 @@ public class PlaceInfoActivity extends AppCompatActivity
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         savedInstanceState.putInt(STATE_LISTENER_ID, listenerId);
+        savedInstanceState.putBoolean(STATE_PENDING, isPending);
     }
 
     @Override
-    public void onManagerSuccess(Place result) {
-        if ((!isDisplayed) && (placeId == result.getId())) {
+    public void onPlaceSuccess(Place result) {
+        if ((isPending) && (placeId == result.getId())) {
             displayPlace(result);
-            isDisplayed = true;
+            isPending = false;
         }
     }
 
     @Override
-    public void onManagerError(String message) {
-        if (!isDisplayed) {
-            isDisplayed = true;
+    public void onPlaceListSuccess(PlaceList result) { }
+
+    @Override
+    public void onPlaceError(PlaceError error) {
+        if (isPending) {
+            isPending = true;
             new AlertDialog.Builder(this)
                     .setTitle("Error!")
-                    .setMessage(message)
+                    .setMessage(error.getMessage())
                     .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -95,6 +107,8 @@ public class PlaceInfoActivity extends AppCompatActivity
         }
     }
 
+    @Override
+    public void onPlaceListError(PlaceError error) { }
 
     private void displayPlace(Place place) {
         txtPlaceTitle.setText(place.getTitle());
@@ -104,10 +118,5 @@ public class PlaceInfoActivity extends AppCompatActivity
             recyclerImages.setLayoutManager(new LinearLayoutManager(this));
             recyclerImages.setAdapter(new ImageAdapter(this, place.getPhotos()));
         }
-    }
-
-    private void showError(String text) {
-        Log.d(PlaceInfoActivity.TAG, text);
-        finish();
     }
 }

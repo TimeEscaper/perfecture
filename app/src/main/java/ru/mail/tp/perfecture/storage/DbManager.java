@@ -57,6 +57,7 @@ public class DbManager {
         });
     }
 
+
     public void addPlace(final Place place) {
         DatabaseDefinition database = FlowManager.getDatabase(AppDatabase.class);
         Transaction transaction = database.beginTransactionAsync(new ITransaction() {

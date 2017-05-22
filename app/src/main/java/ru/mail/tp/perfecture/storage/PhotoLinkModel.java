@@ -6,7 +6,7 @@ import com.raizlabs.android.dbflow.annotation.PrimaryKey;
 import com.raizlabs.android.dbflow.annotation.Table;
 import com.raizlabs.android.dbflow.structure.BaseModel;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "WeakerAccess"})
 @Table(database = AppDatabase.class)
 public class PhotoLinkModel extends BaseModel {
 
@@ -18,7 +18,7 @@ public class PhotoLinkModel extends BaseModel {
     @ForeignKey(tableClass = PlaceModel.class)
     long placeId;
 
-    public PhotoLinkModel() { super(); };
+    public PhotoLinkModel() { super(); }
 
     public PhotoLinkModel(String url, long placeId) {
         super();

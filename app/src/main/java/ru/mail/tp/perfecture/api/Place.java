@@ -3,11 +3,10 @@ package ru.mail.tp.perfecture.api;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by sibirsky on 14.04.17.
- */
+import ru.mail.tp.perfecture.places.cache.Cacheable;
 
-public class Place {
+@SuppressWarnings("unused")
+public class Place implements Cacheable {
     private long id;
     private String title;
     private String description = "";

@@ -12,7 +12,6 @@ import com.squareup.picasso.Picasso;
 import java.util.List;
 
 import ru.mail.tp.perfecture.R;
-import ru.mail.tp.perfecture.api.Place;
 
 class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHolder> {
 

@@ -2,11 +2,9 @@ package ru.mail.tp.perfecture.api;
 
 import java.util.List;
 
-/**
- * Created by sibirsky on 17.04.17.
- */
+import ru.mail.tp.perfecture.places.cache.Cacheable;
 
-public class PlaceList {
+public class PlaceList implements Cacheable {
     private List<Place> places;
 
     public List<Place> getPlaces() {

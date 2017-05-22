@@ -40,14 +40,15 @@ import java.util.List;
 
 import ru.mail.tp.perfecture.R;
 import ru.mail.tp.perfecture.api.Place;
+import ru.mail.tp.perfecture.api.PlaceError;
 import ru.mail.tp.perfecture.api.PlaceList;
 import ru.mail.tp.perfecture.places.PlaceInfoActivity;
-import ru.mail.tp.perfecture.places.PlaceManager;
+import ru.mail.tp.perfecture.places.manager.PlaceManager;
 
 public class MapActivity extends Activity
         implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener,
-        GoogleMap.OnMarkerClickListener, PlaceManager.ManagerListener<PlaceList> {
+        GoogleMap.OnMarkerClickListener, PlaceManager.ManagerListener {
 
     //Constants
     private static final String TAG = MapActivity.class.getName();
@@ -56,7 +57,7 @@ public class MapActivity extends Activity
     private static final String STATE_MAP_TYPE = "mapType";
 
     //Geolocation
-    private GoogleMap mMap;
+    private GoogleMap googleMap;
     private GoogleApiClient googleApiClient;
     private LocationRequest locationRequest = new LocationRequest();
     private Location location;
@@ -64,8 +65,8 @@ public class MapActivity extends Activity
     private int mapType = GoogleMap.MAP_TYPE_NORMAL;
 
     //For PlaceManager
-    private Boolean isPending;
-    private Integer listenerId;
+    private boolean isPending = false;
+    private int listenerId = 0;
 
     //For permissions
     private static final int INIT_MAP = 1;
@@ -82,6 +83,10 @@ public class MapActivity extends Activity
             listenerId = savedInstanceState.getInt(STATE_LISTENER_ID);
             isPending = savedInstanceState.getBoolean(STATE_PENDING);
             mapType = savedInstanceState.getInt(STATE_MAP_TYPE);
+        }
+
+        if (listenerId == 0) {
+            listenerId = PlaceManager.getInstance().registerListener(this);
         }
 
         if (googleApiClient == null) {
@@ -110,18 +115,14 @@ public class MapActivity extends Activity
     protected void onStart() {
         super.onStart();
         googleApiClient.connect();
-        if (isPending == null) {
-            isPending = false;
-        }
-        if (listenerId == null) {
-            listenerId = PlaceManager.getInstance().registerListener(this);
-        }
         PlaceManager.getInstance().subscribeListener(listenerId, this);
     }
 
     @Override
     protected void onStop() {
         PlaceManager.getInstance().unSubscribeListener(listenerId);
+        LocationServices.FusedLocationApi.removeLocationUpdates(
+                googleApiClient, this);
         googleApiClient.disconnect();
         super.onStop();
     }
@@ -141,7 +142,7 @@ public class MapActivity extends Activity
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
+        this.googleMap = googleMap;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkPermission(INIT_MAP);
 
@@ -171,17 +172,23 @@ public class MapActivity extends Activity
     public void onLocationChanged(Location location) { this.location = location; }
 
     @Override
-    public void onManagerSuccess(PlaceList result) {
+    public void onPlaceSuccess(Place result) { }
+
+    @Override
+    public void onPlaceListSuccess(PlaceList result) {
         isPending = false;
         showPlaces(result.getPlaces());
     }
 
     @Override
-    public void onManagerError(String message) {
+    public void onPlaceError(PlaceError error) { }
+
+    @Override
+    public void onPlaceListError(PlaceError error) {
         isPending = false;
         new AlertDialog.Builder(this)
                 .setTitle("Error!")
-                .setMessage(message)
+                .setMessage(error.getMessage())
                 .setPositiveButton("OK", null)
                 .show();
     }
@@ -335,13 +342,13 @@ public class MapActivity extends Activity
     }
 
     private void initializeMap() {
-        mMap.setMapType(mapType);
-        mMap.setOnMarkerClickListener(this);
+        googleMap.setMapType(mapType);
+        googleMap.setOnMarkerClickListener(this);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            mMap.setMyLocationEnabled(true);
+            googleMap.setMyLocationEnabled(true);
         }
 
-        mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
+        googleMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
             @Override
             public boolean onMyLocationButtonClick() {
                 if (isPending) {
@@ -412,7 +419,7 @@ public class MapActivity extends Activity
     private void showPlaces(List<Place> places) {
         for (Place place : places) {
             LatLng placeCoord = new LatLng(place.getLatitude(), place.getLongitude());
-            mMap.addMarker(new MarkerOptions()
+            googleMap.addMarker(new MarkerOptions()
                     .title(place.getTitle())
                     .position(placeCoord)).setTag(place.getId());
         }
@@ -434,6 +441,6 @@ public class MapActivity extends Activity
                 mapType = GoogleMap.MAP_TYPE_NORMAL;
                 break;
         }
-        mMap.setMapType(mapType);
+        googleMap.setMapType(mapType);
     }
 }

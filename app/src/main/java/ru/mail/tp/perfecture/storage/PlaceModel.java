@@ -6,6 +6,7 @@ import com.raizlabs.android.dbflow.annotation.Table;
 import com.raizlabs.android.dbflow.annotation.Unique;
 import com.raizlabs.android.dbflow.structure.BaseModel;
 
+@SuppressWarnings("WeakerAccess")
 @Table(database = AppDatabase.class)
 public class PlaceModel extends BaseModel {
 

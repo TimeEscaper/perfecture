@@ -1,10 +1,10 @@
-package ru.mail.tp.perfecture.places;
+package ru.mail.tp.perfecture.places.manager;
 
+import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,10 +12,12 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import ru.mail.tp.perfecture.api.ApiInterface;
-import ru.mail.tp.perfecture.api.CachedObject;
 import ru.mail.tp.perfecture.api.Place;
+import ru.mail.tp.perfecture.api.PlaceError;
 import ru.mail.tp.perfecture.api.PlaceList;
 import ru.mail.tp.perfecture.api.RetrofitFactory;
+import ru.mail.tp.perfecture.places.cache.Cacheable;
+import ru.mail.tp.perfecture.places.cache.PlaceCache;
 import ru.mail.tp.perfecture.storage.DbManager;
 
 public class PlaceManager {
@@ -25,38 +27,48 @@ public class PlaceManager {
     private final ApiInterface perfectureApi = RetrofitFactory.getApi().create(ApiInterface.class);
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
+    @SuppressLint("UseSparseArrays")
     private final Map<Integer, ManagerListener> listeners = new HashMap<>();
-    private final Map<Integer, CachedObject> requestCache = new HashMap<>();
-    private Integer idCounter = 1;
+    private final PlaceCache requestCache = new PlaceCache();
+    private int idCounter = 1;
 
     public static PlaceManager getInstance() {
         return ourInstance;
     }
 
-    public <T> Integer registerListener(ManagerListener<T> listener) {
+    public int registerListener(ManagerListener listener) {
         listeners.put(idCounter, listener);
         return idCounter++;
     }
 
-    public void unRegisterListener(Integer listenerId) {
+    public void unRegisterListener(int listenerId) {
         listeners.remove(listenerId);
         requestCache.remove(listenerId);
     }
 
-
-    public <T> void subscribeListener(Integer listenerId, ManagerListener<T> listener) {
+    public void subscribeListener(int listenerId, ManagerListener listener) {
+        if (listeners.containsKey(listenerId)) {
+            return;
+        }
         listeners.put(listenerId, listener);
-        if (requestCache.containsKey(listenerId)) {
-            CachedObject result = requestCache.remove(listenerId);
-            if (result.getError() != null) {
-                listener.onManagerSuccess((T)result.getObject());
-            } else {
-                listener.onManagerError(result.getError());
+        if (requestCache.contains(listenerId)) {
+            Cacheable result = requestCache.get(listenerId);
+            requestCache.remove(listenerId);
+            if (result instanceof Place) {
+                listener.onPlaceSuccess((Place)result);
+                return;
+            }
+            if (result instanceof PlaceList) {
+                listener.onPlaceListSuccess((PlaceList)result);
+                return;
+            }
+            if (result instanceof PlaceError) {
+                listener.onPlaceError((PlaceError)result);
             }
         }
     }
 
-    public void unSubscribeListener(Integer listenerId) {
+    public void unSubscribeListener(int listenerId) {
         if (listeners.containsKey(listenerId)) {
             listeners.put(listenerId, null);
         }
@@ -70,16 +82,16 @@ public class PlaceManager {
                 if (response.isSuccessful()) {
                     DbManager.getInstance().addPlace(response.body());
                     if (listeners.containsKey(listenerId)) {
-                        final ManagerListener<Place> listener = listeners.get(listenerId);
+                        final ManagerListener listener = listeners.get(listenerId);
                         if (listener != null) {
                             uiHandler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    listener.onManagerSuccess(response.body());
+                                    listener.onPlaceSuccess(response.body());
                                 }
                             });
                         } else {
-                            requestCache.put(listenerId, new CachedObject(response.body()));
+                            requestCache.put(listenerId, response.body());
                         }
                     }
                 } else {
@@ -104,29 +116,31 @@ public class PlaceManager {
             public void onResponse(Call<PlaceList> call, final Response<PlaceList> response) {
                 if (response.isSuccessful()) {
                     if (listeners.containsKey(listenerId)) {
-                        final ManagerListener<PlaceList> listener = listeners.get(listenerId);
+                        final ManagerListener listener = listeners.get(listenerId);
                         if (listener != null) {
                             uiHandler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    listener.onManagerSuccess(response.body());
+                                    listener.onPlaceListSuccess(response.body());
                                 }
                             });
                         } else {
-                            requestCache.put(listenerId, new CachedObject(response.body()));
+                            requestCache.put(listenerId, response.body());
                         }
                     }
                 } else {
-                    final ManagerListener<PlaceList> listener = listeners.get(listenerId);
+                    final ManagerListener listener = listeners.get(listenerId);
+                    final PlaceError error = new PlaceError("Unable to get nearest places:" +
+                            "unsuccessful response!");
                     if (listener != null) {
                         uiHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                listener.onManagerSuccess(response.body());
+                                listener.onPlaceListError(error);
                             }
                         });
                     } else {
-                        requestCache.put(listenerId, new CachedObject(response.body()));
+                        requestCache.put(listenerId, error);
                     }
                 }
             }
@@ -136,11 +150,13 @@ public class PlaceManager {
                 Log.d(PlaceManager.TAG, "Retrofit callback error: " + t.getMessage());
                 t.printStackTrace();
                 if (listeners.containsKey(listenerId)) {
-                    ManagerListener<Place> listener = listeners.get(listenerId);
+                    final PlaceError error = new PlaceError("Unable to get nearest places:" +
+                            "unsuccessful response!");
+                    ManagerListener listener = listeners.get(listenerId);
                     if (listener != null) {
-                        listener.onManagerError("Unable to get nearest places!");
+                        listener.onPlaceListError(error);
                     } else {
-                        requestCache.put(listenerId, new CachedObject("Unable to get nearest places!"));
+                        requestCache.put(listenerId, error);
                     }
                 }
             }
@@ -155,16 +171,16 @@ public class PlaceManager {
             @Override
             public void onSuccess(final Place result) {
                 if (listeners.containsKey(listenerId)) {
-                    final ManagerListener<Place> listener = listeners.get(listenerId);
+                    final ManagerListener listener = listeners.get(listenerId);
                     if (listener != null) {
                         uiHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                listener.onManagerSuccess(result);
+                                listener.onPlaceSuccess(result);
                             }
-                        });;
+                        });
                     } else {
-                        requestCache.put(listenerId, new CachedObject(result));
+                        requestCache.put(listenerId, result);
                     }
                 }
             }
@@ -172,16 +188,17 @@ public class PlaceManager {
             @Override
             public void onError(String message) {
                 if (listeners.containsKey(listenerId)) {
-                    final ManagerListener<Place> listener = listeners.get(listenerId);
+                    final ManagerListener listener = listeners.get(listenerId);
+                    final PlaceError error = new PlaceError("Unable to retrieve place!");
                     if (listener != null) {
                         uiHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                listener.onManagerError("Unable to retrieve place!");
+                                listener.onPlaceError(error);
                             }
                         });
                     } else {
-                        requestCache.put(listenerId, new CachedObject("Unable to retrieve place!"));
+                        requestCache.put(listenerId, error);
                     }
                 }
             }
@@ -189,8 +206,10 @@ public class PlaceManager {
     }
 
 
-    public interface ManagerListener<T> {
-        void onManagerSuccess(T result);
-        void onManagerError(String message);
+    public interface ManagerListener {
+        void onPlaceSuccess(Place result);
+        void onPlaceListSuccess(PlaceList result);
+        void onPlaceError(PlaceError error);
+        void onPlaceListError(PlaceError error);
     }
 }
