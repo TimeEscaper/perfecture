@@ -198,7 +198,7 @@ public class MapActivity extends Activity
         if (marker.getTag() != null) {
             long markedPlace = (Long) marker.getTag();
             Intent intent = new Intent(MapActivity.this, PlaceInfoActivity.class);
-            intent.putExtra(PlaceInfoActivity.EXTRA_PLACE_TAG, String.valueOf(markedPlace));
+            intent.putExtra(PlaceInfoActivity.EXTRA_PLACE_TAG, markedPlace);
             startActivity(intent);
         }
         return false;

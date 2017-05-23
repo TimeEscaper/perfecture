@@ -12,9 +12,9 @@ import ru.mail.tp.perfecture.R;
 import ru.mail.tp.perfecture.api.Place;
 import ru.mail.tp.perfecture.api.PlaceError;
 import ru.mail.tp.perfecture.api.PlaceList;
+import ru.mail.tp.perfecture.places.adapters.ImageAdapter;
 import ru.mail.tp.perfecture.places.manager.PlaceManager;
 
-@SuppressWarnings({"FieldCanBeLocal", "unused"})
 public class PlaceInfoActivity extends AppCompatActivity
         implements PlaceManager.ManagerListener {
 
@@ -39,7 +39,7 @@ public class PlaceInfoActivity extends AppCompatActivity
 
         txtPlaceTitle = (TextView) findViewById(R.id.place_title);
         txtPlaceDescription = (TextView) findViewById(R.id.place_description);
-        placeId = Long.valueOf(getIntent().getStringExtra(EXTRA_PLACE_TAG));
+        placeId = getIntent().getLongExtra(EXTRA_PLACE_TAG, 0);
 
         if (savedInstanceState != null) {
             listenerId = savedInstanceState.getInt(STATE_LISTENER_ID);

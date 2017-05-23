@@ -163,11 +163,59 @@ public class PlaceManager {
         });
     }
 
+    public void getAllPlacesList(final Integer listenerId) {
+        DbManager.getInstance().getAllPlaces(new DbManager.QueryCallback<PlaceList>() {
+            @Override
+            public void onSuccess(final PlaceList result) {
+                if (listeners.containsKey(listenerId)) {
+                    final ManagerListener listener = listeners.get(listenerId);
+                    if (listener != null) {
+                        if (result.getPlaces().isEmpty()) {
+                            uiHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    listener.onPlaceListError(new PlaceError("Database is still empty!"));
+                                }
+                            });
+                        } else {
+                            uiHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    listener.onPlaceListSuccess(result);
+                                }
+                            });
+                        }
+                    } else {
+                        requestCache.put(listenerId, result);
+                    }
+                }
+            }
+
+            @Override
+            public void onError(final String message) {
+                if (listeners.containsKey(listenerId)) {
+                    final ManagerListener listener = listeners.get(listenerId);
+                    final PlaceError error = new PlaceError("Unable to get places from database!");
+                    if (listener != null) {
+                        uiHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                listener.onPlaceError(error);
+                            }
+                        });
+                    } else {
+                        requestCache.put(listenerId, error);
+                    }
+                }
+            }
+        });
+    }
+
     private PlaceManager() {
     }
 
     private void retrievePlaceFromDB(final long placeId, final Integer listenerId) {
-        DbManager.getInstance().getPlace(placeId, new DbManager.queryCallback<Place>() {
+        DbManager.getInstance().getPlace(placeId, new DbManager.QueryCallback<Place>() {
             @Override
             public void onSuccess(final Place result) {
                 if (listeners.containsKey(listenerId)) {

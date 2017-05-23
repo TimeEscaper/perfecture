@@ -1,4 +1,4 @@
-package ru.mail.tp.perfecture.places;
+package ru.mail.tp.perfecture.places.adapters;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
@@ -13,12 +13,13 @@ import java.util.List;
 
 import ru.mail.tp.perfecture.R;
 
-class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHolder> {
+@SuppressWarnings("WeakerAccess")
+public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHolder> {
 
     private List<String> urls;
     private final LayoutInflater inflater;
 
-    ImageAdapter(final Context context, List<String> urls) {
+    public ImageAdapter(final Context context, List<String> urls) {
         this.inflater = LayoutInflater.from(context);
         this.urls = urls;
     }
@@ -38,7 +39,7 @@ class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHolder> {
         return urls.size();
     }
 
-    static class ImageViewHolder extends RecyclerView.ViewHolder {
+    public static class ImageViewHolder extends RecyclerView.ViewHolder {
         private final ImageView image;
 
         ImageViewHolder(View itemView) {

@@ -1,5 +1,6 @@
 package ru.mail.tp.perfecture.storage;
 
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.raizlabs.android.dbflow.config.DatabaseDefinition;
@@ -7,13 +8,16 @@ import com.raizlabs.android.dbflow.config.FlowManager;
 import com.raizlabs.android.dbflow.sql.language.SQLite;
 import com.raizlabs.android.dbflow.structure.database.DatabaseWrapper;
 import com.raizlabs.android.dbflow.structure.database.transaction.ITransaction;
+import com.raizlabs.android.dbflow.structure.database.transaction.QueryTransaction;
 import com.raizlabs.android.dbflow.structure.database.transaction.Transaction;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import ru.mail.tp.perfecture.api.Place;
+import ru.mail.tp.perfecture.api.PlaceList;
 
 public class DbManager {
     private static final String TAG = DbManager.class.getName();
@@ -28,7 +32,7 @@ public class DbManager {
     private DbManager() {
     }
 
-    public void getPlace(final long id, final queryCallback<Place> callback) {
+    public void getPlace(final long id, final QueryCallback<Place> callback) {
         executor.execute(new Runnable() {
             @Override
             public void run() {
@@ -55,6 +59,36 @@ public class DbManager {
                 callback.onSuccess(place);
             }
         });
+    }
+
+    public void getAllPlaces(final QueryCallback<PlaceList> callback) {
+        SQLite.select()
+                .from(PlaceModel.class)
+                .async()
+                .queryListResultCallback(new QueryTransaction.QueryResultListCallback<PlaceModel>() {
+                    @Override
+                    public void onListQueryResult(QueryTransaction queryTransaction, @NonNull List<PlaceModel> list) {
+                        List<Place> places = new ArrayList<Place>();
+                        if (!list.isEmpty()) {
+                            for (PlaceModel model : list) {
+                                places.add(new Place(model.getId(), model.getTitle(), null,
+                                        model.getLatitude(), model.getLongitude()));
+                            }
+                        }
+                        PlaceList placeList = new PlaceList();
+                        placeList.setPlaces(places);
+                        callback.onSuccess(placeList);
+                    }
+                })
+                .error(new Transaction.Error() {
+                    @Override
+                    public void onError(Transaction transaction, Throwable throwable) {
+                        Log.d(DbManager.TAG, "Transaction error: " + throwable.getMessage());
+                        throwable.printStackTrace();
+                        callback.onError("Unable to get places from database");
+                    }
+                })
+                .execute();
     }
 
 
@@ -93,7 +127,7 @@ public class DbManager {
         transaction.execute();
     }
 
-    public interface queryCallback<T> {
+    public interface QueryCallback<T> {
         void onSuccess(T result);
         void onError(String message);
     }
